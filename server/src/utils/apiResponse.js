@@ -8,3 +8,7 @@ class ApiResponse {
 }
 
 export {ApiResponse}
+
+// example of using api response
+
+// new ApiResponse(200,{user: loggedInUser, accessToken, refreshToken},"user logged in") 
