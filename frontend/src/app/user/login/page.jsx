@@ -11,8 +11,6 @@ const Login = () => {
 
   const router = useRouter()
 
-
-
   const LoginUser = (e) => {
     e.preventDefault();
     const data = { email, password };
@@ -21,8 +19,10 @@ const Login = () => {
 
     fetch("http://localhost:8080/api/v1/user/login", {
       method:"POST",
+      // BELOW LINE IS VERY FUCKING IMPORTANT ps WASTED 8 HOURS ON THIS SHIT
+      credentials:"include",
       headers:{
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data)
     })
@@ -31,19 +31,15 @@ const Login = () => {
       return response.json()
     })
     .then((data)=>{
+      // setFlag(true)
+      router.push("/user/my-profile")
       console.log("user logged in successfully", data);
-      setFlag(true)
     })
     .catch(error=>console.log(error))
-
-  };
     
-    // IF USERS LOGGS IN LETS SENDIN HIM TO PROFILE PAGE
-    useEffect(()=>{
-      if(flag){
-      router.push("/profile")
-    ;}
-  },[flag, router])
+  };
+  
+  // IF USERS LOGGS IN LETS SENDIN HIM TO PROFILE PAGE
 
 
   return (

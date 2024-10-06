@@ -4,6 +4,12 @@ import {ApiResponse} from "../utils/apiResponse.js"
 import User from "../models/user.model.js"
 import generateToken from "../utils/tokens.js"
 
+import dotenv from "dotenv"
+dotenv.config({
+    path: './.env'
+})
+
+
 // imp for getUserProfile controller refer generate token too
 import jwt from "jsonwebtoken"
 
@@ -84,44 +90,95 @@ const logoutUser = asyncHandler( async(req,res)=>{
 } )
 
 // protected route
-const getUserProfile = asyncHandler( async(req,res)=>{
-
-    //  getting the cookie from the user
-    const token = req.cookies.jwt;
-
-    // checking if the cookie exist or not
-    if(!token){throw new ApiError(401, "no cookie pls log in again to get one")}
-    console.log(token);
+const updateUserProfile = asyncHandler( async(req,res)=>{
     
+    const {linkHandle , email, name} = req.body;
 
-    // verifying the token
+    const token = req.cookies.jwt;
+    console.log(token)
+
+    if(!token){throw new ApiError(404, "no token no cookies")}
+
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const UpdateUser = await User.findById(decoded.userID);
+
+        if(!UpdateUser){throw new ApiError(404, "no user found by this id")};
+
+        // changing the old details with new one
+        UpdateUser.email = email || UpdateUser.email ;
+        UpdateUser.linkHandel = linkHandle || UpdateUser.linkHandle;
+        UpdateUser.name = name || UpdateUser.name;
+
+        await UpdateUser.save()
+    } catch (error) {
+        console.log(error, "token decoding went wrong");
+    }
+
+    res.status(200).json("user mustve updated now")
+
+} )
+
+const getUserProfile = asyncHandler(asyncHandler(async(req,res)=>{
+     // Getting the cookie from the user
+    const token = req.cookies.jwt;
+    console.log("Received Token:", token); // Log the received token
+
+    // Checking if the cookie exists or not
+    if (!token) {
+        console.error("No cookie found. User must log in."); // Log the error
+        throw new ApiError(401, "No cookie, please log in again to get one");
+    }
+    
+    // Verifying the token
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Decoded Token:", decoded); // Log the decoded token
         
-        // fetching userProfile from our data base
-        //** we have used userID to make the token and we will use JWTsecret retrive our userID and search for user
+        // Fetching userProfile from the database
         const userProfile = await User.findById(decoded.userID).select("-password");
 
-        // incase no such user exist
-        if(!userProfile){ throw new ApiError(401, "no such user exist in data base")}
+        // In case no such user exists
+        if (!userProfile) {
+            console.error("No such user exists in the database."); // Log error
+            throw new ApiError(404, "No such user exists in the database");
+        }
 
-        // response
+        // Response
         res.status(200).json({
-            DECODED:decoded,
-            USERProfile:userProfile
-        })
+            USERProfile: userProfile
+        });
         
     } catch (error) {
-        throw new ApiError(404, "invalid token log in ")
+        console.error("Error verifying token or fetching user:", error); // Log the error
+        throw new ApiError(401, "Invalid token, log in again");
     }
-} )
 
-// protected route
-const updateUserProfile = asyncHandler( async(req,res)=>{
-    res.status(200).json("messsage should only be shown when user has our cookie")
-} )
+}))
 
-const linkHandler = asyncHandler( async(req,res)=>{} )
+
+const linkHandler = asyncHandler( async(req,res)=>{
+
+    // getting the link from body
+    const {linkHandle} = req.body
+    console.log("linkHandle", linkHandle);
+    
+
+    //checking if its valid or not
+    if(!linkHandle){throw new ApiError(400, 'invalid linkHandle')}
+
+    // searching for them in our database
+    const linkShowCase = await User.findOne({linkHandle}).select("-password -_id");
+    console.log("linkShowCase", linkShowCase);
+    
+
+    // checking if such link is claimed or not
+    if(!linkShowCase){ throw new ApiError(404, "these link is not claimed yet")}
+
+    // show the links and user details
+    res.status(200).json(linkShowCase)
+} )
 
 export {
     loginUser,

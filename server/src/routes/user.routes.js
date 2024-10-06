@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { getUserProfile, loginUser, logoutUser, registerUser, updateUserProfile } from "../controllers/user.controller.js";
+import { getUserProfile,linkHandler, loginUser, logoutUser, registerUser, updateUserProfile } from "../controllers/user.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -18,10 +18,13 @@ router.route("/login").post(loginUser)
 router.route("/logout").post(logoutUser)
 
 // PRIVATE ROUTE
-router.route("/profile").get(protect, getUserProfile)
+router.route("/profile").put(protect, updateUserProfile)
+
+// PRIVATE ROUTE
+router.route("/profile").post(protect, getUserProfile)
 
 // DYNAMIC PUBLIC ROUTE
-router.route("/:username").get()
+router.route("/:username").post(linkHandler)
 
 
 export default router
